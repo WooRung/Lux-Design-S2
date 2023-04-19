@@ -1,0 +1,7 @@
+name: lux_ai
+channels:
+  - defaults
+  - conda-forge
+  - nvidia
+  - rapidsai
+prefix: /usr/local/anaconda3/envs/lux_ai

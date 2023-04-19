@@ -25,9 +25,8 @@ dependencies:
   - gym=0.21
 
   - pip:
-    - pettingzoo
-    - termcolor
-    - opensimplex
-    - pygame
-    - vec_noise
-
+      - pettingzoo
+      - termcolor
+      - opensimplex
+      - pygame
+      - vec_noise

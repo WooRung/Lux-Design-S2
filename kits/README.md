@@ -123,6 +123,7 @@ Every kit has an `Agent` class that defines two functions, `early_setup` and `ac
 ## Kit API
 
 All kits come with a interactable API to get data about the current state/observation of the environment. For specific details of how to use it you should refer to the code/docs in the respective kit folders. The game state or formatted observation looks as so
+
 ```python
 class GameState:
     env_steps: int # number of env steps passed
