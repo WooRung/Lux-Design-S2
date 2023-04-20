@@ -2,11 +2,19 @@ import cv2
 import os
 import string
 import random
+import numpy as np
+from tqdm import tqdm
+
+from IPython.display import Video
 
 def animate(imgs, _return=True, video_name=None):
     # using cv2 to generate videos as moviepy doesn't work on kaggle notebooks
     if video_name is None:
       video_name = ''.join(random.choice(string.ascii_letters) for i in range(18))+'.webm'
+    video_name = 'videos/'+video_name
+    
+    os.makedirs('videos', exist_ok=True)
+
     height, width, layers = imgs[0].shape
     fourcc = cv2.VideoWriter_fourcc(*'VP90')
     video = cv2.VideoWriter(video_name, fourcc, 10, (width,height))
@@ -16,8 +24,7 @@ def animate(imgs, _return=True, video_name=None):
         video.write(img)
     video.release()
     if _return:
-        from IPython.display import Video
-        return Video(video_name)
+        return video_name
     
 def interact(env, agents, steps, save_video=True, video_name=None):
     """
@@ -55,3 +62,4 @@ def interact(env, agents, steps, save_video=True, video_name=None):
         imgs += [env.render("rgb_array", width=640, height=640)]
         done = dones["player_0"] and dones["player_1"]
     return animate(imgs, _return=save_video, video_name=video_name)
+
