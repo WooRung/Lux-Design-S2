@@ -1,6 +1,7 @@
 from luxai_s2.wrappers import Controller as IController
 
 class BaseController(IController):
+  
   pass
 
 class SimpleController(BaseController):

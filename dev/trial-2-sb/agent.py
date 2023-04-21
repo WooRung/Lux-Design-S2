@@ -6,7 +6,8 @@ from lux.team import FactionTypes
 import numpy as np
 import sys
 
-class BaseAgent():
+
+class BaseAgent:
     def __init__(self, player: str, env_cfg: EnvConfig) -> None:
         self.player = player
         self.opp_player = "player_1" if self.player == "player_0" else "player_0"
@@ -19,9 +20,9 @@ class BaseAgent():
             return dict(faction="TheBuilders", bid=0)
         else:
             # optionally convert observations to python objects with utility functions
-            game_state = obs_to_game_state(step, self.env_cfg, obs) 
-            # factory 건설 시점
-        
+            game_state = obs_to_game_state(step, self.env_cfg, obs)
+            # factory 건설 시점 d
+
             # how much water and metal you have in your starting pool to give to new factories
             water_left = game_state.teams[self.player].water
             metal_left = game_state.teams[self.player].metal
@@ -40,16 +41,16 @@ class BaseAgent():
         actions = dict()
         game_state: GameState = obs_to_game_state(step, self.env_cfg, obs)
         # factory만 act
-        factories = game_state.factories[self.player] 
+        factories = game_state.factories[self.player]
         from pprint import pprint
         for unit_id, factory in factories.items():
-            if factory.power >= self.env_cfg.ROBOTS['HEAVY'].POWER_COST and factory.cargo.metal >= self.env_cfg.ROBOTS["HEAVY"].METAL_COST:
-                
+            if factory.power >= self.env_cfg.ROBOTS['HEAVY'].POWER_COST and factory.cargo.metal >= self.env_cfg.ROBOTS[
+                "HEAVY"].METAL_COST:
                 actions[unit_id] = factory.build_heavy()
 
-        return actions    
-    
-    
+        return actions
+
+
 Agent = BaseAgent
 # class BaseAgent():
 #     """
@@ -86,7 +87,7 @@ Agent = BaseAgent
 
 #     def act(self, step: int, obs, remainingOverageTime: int = 60):
 #         actions = dict()
-        
+
 #         """
 #         optionally do forward simulation to simulate positions of units, lichen, etc. in the future
 #         from lux.forward_sim import forward_sim
