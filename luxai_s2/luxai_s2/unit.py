@@ -3,8 +3,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List
 
+"""
+Action 혹은 State등 모든것의 Type등을 명시
+"""
 try:
-    from typing import TypedDict    
+    from typing import TypedDict
 except:
     from typing_extensions import TypedDict
 
@@ -70,7 +73,7 @@ class UnitCargo:
 
 class Unit:
     def __init__(
-        self, team: Team, unit_type: UnitType, unit_id: str, env_cfg: EnvConfig
+            self, team: Team, unit_type: UnitType, unit_id: str, env_cfg: EnvConfig
     ) -> None:
         self.unit_type = unit_type
         self.team_id = team.team_id

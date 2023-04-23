@@ -56,7 +56,7 @@ def env():
     You can find full documentation for these methods
     elsewhere in the developer documentation.
     """
-    env = raw_env()
+    env: LuxAI_S2 = raw_env()
     # This wrapper is only for environments which print results to the terminal
     env = wrappers.CaptureStdoutWrapper(env)
     # this wrapper helps error handling for discrete action spaces

@@ -1,3 +1,9 @@
+from typing import Type
+
+from luxai_s2.state import ObservationStateDict
+from luxai_s2.unit import BidActionType, FactoryPlacementActionType, ActionType
+from stable_baselines3 import PPO
+
 from lux.kit import obs_to_game_state, GameState
 from lux.config import EnvConfig
 from lux.utils import direction_to, my_turn_to_place_factory
@@ -5,53 +11,143 @@ from lux.team import FactionTypes
 
 import numpy as np
 import sys
+import os
+from .wrappers.controllers import BaseController
 
 
 class BaseAgent:
+    """
+    Agent: 실제 action은 lux-action을 반환해야 한다.
+    """
+
     def __init__(self, player: str, env_cfg: EnvConfig) -> None:
         self.player = player
         self.opp_player = "player_1" if self.player == "player_0" else "player_0"
         np.random.seed(0)
         self.env_cfg: EnvConfig = env_cfg
 
-    def early_setup(self, step: int, obs, remainingOverageTime: int = 60):
-        if step == 0:
-            # bidding Time
-            return dict(faction="TheBuilders", bid=0)
-        else:
-            # optionally convert observations to python objects with utility functions
-            game_state = obs_to_game_state(step, self.env_cfg, obs)
-            # factory 건설 시점 d
 
-            # how much water and metal you have in your starting pool to give to new factories
-            water_left = game_state.teams[self.player].water
-            metal_left = game_state.teams[self.player].metal
-            # how many factories you have left to place
-            factories_to_place = game_state.teams[self.player].factories_to_place
-            # whether it is your turn to place a factory
-            my_turn_to_place = my_turn_to_place_factory(game_state.teams[self.player].place_first, step)
-            if factories_to_place > 0 and my_turn_to_place:
-                # we will spawn our factory in a random location with 150 metal and water if it is our turn to place
-                potential_spawns = np.array(list(zip(*np.where(obs["board"]["valid_spawns_mask"] == 1))))
-                spawn_loc = potential_spawns[np.random.randint(0, len(potential_spawns))]
-                return dict(spawn=spawn_loc, metal=150, water=150)
-        return dict()
-
-    def act(self, step: int, obs, remainingOverageTime: int = 60):
-        actions = dict()
-        game_state: GameState = obs_to_game_state(step, self.env_cfg, obs)
-        # factory만 act
-        factories = game_state.factories[self.player]
-        from pprint import pprint
-        for unit_id, factory in factories.items():
-            if factory.power >= self.env_cfg.ROBOTS['HEAVY'].POWER_COST and factory.cargo.metal >= self.env_cfg.ROBOTS[
-                "HEAVY"].METAL_COST:
-                actions[unit_id] = factory.build_heavy()
-
-        return actions
+MODEL_WEIGHTS_RELATIVE_PATH = "./best_model"
 
 
-Agent = BaseAgent
+class BaseRLAgent(BaseAgent):
+
+    def __init__(self, player: str, env_cfg: EnvConfig, controller_cls: Type[BaseController]) -> None:
+        super().__init__(player, env_cfg)
+
+        directory = os.path.dirname(__file__)
+        self.policy = PPO.load(os.path.join(directory, MODEL_WEIGHTS_RELATIVE_PATH))
+        self.controller = controller_cls(self.env_cfg)
+        # self.controller = SimpleUnitDiscreteCont3 roller(self.env_cfg)
+
+    def bid_policy(self, step: int, obs: ObservationStateDict, remainingOverageTime: int = 60) -> BidActionType:
+        # return dict(faction="AlphaStrike", bid=0)
+        raise NotImplementedError
+
+    def factory_placement_policy(self, step: int, obs: ObservationStateDict,
+                                 remainingOverageTime: int = 60) -> FactoryPlacementActionType:
+        raise NotImplementedError
+
+    def act(self, step: int, obs: ObservationStateDict, remainingOverageTime: int = 60) -> ActionType:
+        raise NotImplementedError
+
+
+class RLAgent(BaseRLAgent):
+
+    def __init__(self, player: str, env_cfg: EnvConfig, controller_cls: Type[BaseController]) -> None:
+        super().__init__(player, env_cfg, controller_cls)
+
+    def bid_policy(self, step: int, obs: ObservationStateDict, remainingOverageTime: int = 60) -> BidActionType:
+        pass
+
+    def factory_placement_policy(self, step: int, obs: ObservationStateDict,
+                                 remainingOverageTime: int = 60) -> FactoryPlacementActionType:
+        pass
+
+    def act(self, step: int, obs: ObservationStateDict, remainingOverageTime: int = 60) -> ActionType:
+        print(obs)
+        pass
+
+
+# def factory_placement_policy(self, step: int, obs, remainingOverageTime: int = 60):
+#     # the policy here is the same one used in the RL tutorial: https://www.kaggle.com/code/stonet2000/rl-with-lux-2-rl-problem-solving
+#     if obs["teams"][self.player]["metal"] == 0:
+#         return dict()
+#     potential_spawns = list(zip(*np.where(obs["board"]["valid_spawns_mask"] == 1)))
+#     potential_spawns_set = set(potential_spawns)
+#     done_search = False
+#
+#     ice_diff = np.diff(obs["board"]["ice"])
+#     pot_ice_spots = np.argwhere(ice_diff == 1)
+#     if len(pot_ice_spots) == 0:
+#         pot_ice_spots = potential_spawns
+#     trials = 5
+#     while trials > 0:
+#         pos_idx = np.random.randint(0, len(pot_ice_spots))
+#         pos = pot_ice_spots[pos_idx]
+#
+#         area = 3
+#         for x in range(area):
+#             for y in range(area):
+#                 check_pos = [pos[0] + x - area // 2, pos[1] + y - area // 2]
+#                 if tuple(check_pos) in potential_spawns_set:
+#                     done_search = True
+#                     pos = check_pos
+#                     break
+#             if done_search:
+#                 break
+#         if done_search:
+#             break
+#         trials -= 1
+#     spawn_loc = potential_spawns[np.random.randint(0, len(potential_spawns))]
+#     if not done_search:
+#         pos = spawn_loc
+#
+#     metal = obs["teams"][self.player]["metal"]
+#     return dict(spawn=pos, metal=metal, water=metal)
+
+# def act(self, step: int, obs, remainingOverageTime: int = 60):
+#     # first convert observations using the same observation wrapper you used for training
+#     # note that SimpleUnitObservationWrapper takes input as the full observation for both players and returns an obs for players
+#     raw_obs = dict(player_0=obs, player_1=obs)
+#     obs = SimpleUnitObservationWrapper.convert_obs(raw_obs, env_cfg=self.env_cfg)
+#     obs = obs[self.player]
+#
+#     obs = th.from_numpy(obs).float()
+#     with th.no_grad():
+#         # to improve performance, we have a rule based action mask generator for the controller used
+#         # which will force the agent to generate actions that are valid only.
+#         action_mask = (
+#             th.from_numpy(self.controller.action_masks(self.player, raw_obs))
+#             .unsqueeze(0)
+#             .bool()
+#         )
+#
+#         # SB3 doesn't support invalid action masking. So we do it ourselves here
+#         features = self.policy.policy.features_extractor(obs.unsqueeze(0))
+#         x = self.policy.policy.mlp_extractor.shared_net(features)
+#         logits = self.policy.policy.action_net(x)  # shape (1, N) where N=12 for the default controller
+#
+#         logits[~action_mask] = -1e8  # mask out invalid actions
+#         dist = th.distributions.Categorical(logits=logits)
+#         actions = dist.sample().cpu().numpy()  # shape (1, 1)
+#
+#     # use our controller which we trained with in train.py to generate a Lux S2 compatible action
+#     lux_action = self.controller.action_to_lux_action(
+#         self.player, raw_obs, actions[0]
+#     )
+#
+#     # commented code below adds watering lichen which can easily improve your agent
+#     # shared_obs = raw_obs[self.player]
+#     # factories = shared_obs["factories"][self.player]
+#     # for unit_id in factories.keys():
+#     #     factory = factories[unit_id]
+#     #     if 1000 - step < 50 and factory["cargo"]["water"] > 100:
+#     #         lux_action[unit_id] = 2 # water and grow lichen at the very end of the game
+#
+#     return lux_action
+
+
 # class BaseAgent():
 #     """
 #     기본 Agent
@@ -150,4 +246,4 @@ Agent = BaseAgent
 # class RLAgent(BaseAgent):
 #     pass
 
-# Agent = RLAgent
+Agent = RLAgent
