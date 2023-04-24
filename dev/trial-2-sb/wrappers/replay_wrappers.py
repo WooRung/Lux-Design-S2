@@ -28,7 +28,7 @@ class ReplayWrapper(gym.Wrapper):
         # generate_replay()
 
     def reset(self, **kwargs):
-        if self._record: # 양수
+        if self._record:  # 양수
             logger.info(f'Replay 기록 종료: {self._record}.json')
             replay = generate_replay(self.state_list)
             replay_json = json.dumps(replay)
@@ -36,21 +36,21 @@ class ReplayWrapper(gym.Wrapper):
                 f.write(replay_json)
             self.state_list = []
             self._record = 0
+        kwargs = kwargs.copy()
+        rank = kwargs.pop('rank', None)
 
-        rank = kwargs.get('rank')
+        if rank:
+            if rank not in ReplayWrapper.REPLAY_DICT:
+                ReplayWrapper.REPLAY_DICT[rank] = 0
+            else:
+                ReplayWrapper.REPLAY_DICT[rank] += 1
 
-        if rank not in ReplayWrapper.REPLAY_DICT:
-            ReplayWrapper.REPLAY_DICT[rank] = 0
-        else:
-            ReplayWrapper.REPLAY_DICT[rank] += 1
-
-        if ReplayWrapper.RUN_COUNT % 100 == 1:
-            self._record = ReplayWrapper.RUN_COUNT # 양수
+        if ReplayWrapper.RUN_COUNT % 10 == 2:
+            self._record = ReplayWrapper.RUN_COUNT  # 양수
             logger.info(f'Replay 기록 시작: {self._record}.json')
             self.state_list = []
 
         ReplayWrapper.RUN_COUNT += 1
-
         # seed = kwargs.get('seed')
 
         # print(seed)
